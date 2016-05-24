@@ -25,34 +25,34 @@ public class TransactionFeeCalculator {
     }
 
     public void calculateFee(List<Transaction> transactionList) {
-        for (int i = 0; i < transactionList.size(); i++) {
-            if (!transactionList.get(i).isCalculated()) {
-                int intraDayTransaction = isIntraDayTransaction(
-                        transactionList, i);
-                if (intraDayTransaction != -1) {
-                    // This is intraDay transaction, and the returned index is
-                    // that
-                    // paired transaction
-                    transactionList.get(i).setCalculatedFee(10);
-                    transactionList.get(i).setCalculated(true);
-                    transactionList.get(intraDayTransaction).setCalculatedFee(
-                            10);
-                    transactionList.get(intraDayTransaction)
-                            .setCalculated(true);
-                } else if (transactionList.get(i).isPriorityFlag()) {
-                    // For non -intra day and high priority transaction , we
-                    // calculate $500
-                    transactionList.get(i).setCalculatedFee(500);
-                    transactionList.get(i).setCalculated(true);
-                } else {
-                    // For non -intra day and low priority transaction , we
-                    // calculate $100
-                    transactionList.get(i).setCalculatedFee(100);
-                    transactionList.get(i).setCalculated(true);
-                }
+        for (int transactionIndex = 0; transactionIndex < transactionList.size(); transactionIndex++) {
+            Transaction transaction = transactionList.get(transactionIndex);
+            int intraDayTransactionIndex;
+            if (TransactionType.isValidForIntraDay(transaction.getTransactionType()) && (intraDayTransactionIndex = isIntraDayTransaction(
+                    transactionList, transactionIndex)) != -1) {
+                // This is intraDay transaction, and the returned index is
+                // that
+                // paired transaction
+                transaction.setCalculatedFee(10);
+                transaction.setCalculated(true);
+                transactionList.get(intraDayTransactionIndex).setCalculatedFee(
+                        10);
+                transactionList.get(intraDayTransactionIndex)
+                        .setCalculated(true);
+            } else if (transaction.isPriorityFlag()) {
+                // For non -intra day and high priority transaction , we
+                // calculate $500
+                transaction.setCalculatedFee(500);
+                transaction.setCalculated(true);
+            } else {
+                // For non -intra day and low priority transaction , we
+                // calculate $100
+                transaction.setCalculatedFee(100);
+                transaction.setCalculated(true);
             }
         }
     }
+
 
     private int isIntraDayTransaction(List<Transaction> transactionList,
                                       int indexFor) {

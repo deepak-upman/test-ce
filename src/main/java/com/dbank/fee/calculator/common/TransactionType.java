@@ -24,4 +24,13 @@ public enum TransactionType {
         }
         return resultTransactionType;
     }
+
+    public static boolean isValidForIntraDay(TransactionType transactionType) {
+        boolean isValidForIntraDay = false;
+
+        if (transactionType != null && (transactionType == TransactionType.BUY && transactionType == TransactionType.SELL)) {
+            isValidForIntraDay = true;
+        }
+        return isValidForIntraDay;
+    }
 }
