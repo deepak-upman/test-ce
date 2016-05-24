@@ -1,58 +1,48 @@
 /**
- * 
+ *
  */
 package com.dbank.fee.calculator.file.reader;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
-import java.io.IOException;
-import java.util.List;
-
+import com.dbank.fee.calculator.common.Transaction;
+import com.dbank.fee.calculator.common.TransactionEntry;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.dbank.fee.calculator.common.Transaction;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * A test class for {@link CSVDataReader} .
- * 
+ *
  * @author Deepak Kumar Sharma
- * 
  */
 public class CSVDataReaderTest {
 
-	CSVDataReader csvDataReader;
+    CSVDataReader csvDataReader;
 
-	@Before
-	public void setUp() {
-		csvDataReader = new CSVDataReader();
-	}
+    @Before
+    public void setUp() {
+        csvDataReader = new CSVDataReader();
+    }
 
-	@Test(expected = NullPointerException.class)
-	public void testGetReaderForNullTransactionDataFileType() throws Exception {
+    @Test(expected = NullPointerException.class)
+    public void testGetReaderForNullTransactionDataFileType() throws Exception {
 
-		csvDataReader.readFile("SomeUnknownFileName.CSV");
-	}
+        csvDataReader.readFile("SomeUnknownFileName.CSV");
+    }
 
-	@Test
-	public void testGetReaderForNullTransactionDataFileTypeAsCSV()
-			throws Exception {
+    @Test
+    public void testGetReaderForNullTransactionDataFileTypeAsCSV()
+            throws Exception {
 
-		List<Transaction> transactionList = csvDataReader
-				.readFile("TransactionsSampleData.csv");
-		assertNotNull("transactionList should be Not NULL", transactionList);
-		assertEquals(
-				"transactionList should have 20 transactions provided in the sample data file for test: ",
-				20, transactionList.size());
-		String trnsIdFixedPart = "DEEEXTXN";
-		int rowNumber = 0;
-		for (Transaction transaction : transactionList) {
-			rowNumber++;
-			String tranId = trnsIdFixedPart + rowNumber;
-			assertEquals("TransactionId should be " + tranId, tranId,
-					transaction.getExtTranId());
-		}
-
-	}
+        Map<TransactionEntry, List<Transaction>> transactionsMap = csvDataReader
+                .readFile("TransactionsSampleData.csv");
+        assertNotNull("transactionList should be Not NULL", transactionsMap);
+        assertTrue(
+                "transactionsMap should have some transactions read from provided in the sample data file for test: ",
+                transactionsMap.size() > 0);
+    }
 }

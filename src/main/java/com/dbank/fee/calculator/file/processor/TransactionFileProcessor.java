@@ -6,6 +6,7 @@ package com.dbank.fee.calculator.file.processor;
 import com.dbank.fee.calculator.TransactionFeeCalculator;
 import com.dbank.fee.calculator.common.Transaction;
 import com.dbank.fee.calculator.common.TransactionDataFileType;
+import com.dbank.fee.calculator.common.TransactionEntry;
 import com.dbank.fee.calculator.common.exception.InvalidDataException;
 import com.dbank.fee.calculator.common.exception.InvalidDataFileTypeException;
 import com.dbank.fee.calculator.file.reader.AbstractDataReader;
@@ -34,21 +35,21 @@ public class TransactionFileProcessor {
             throws InvalidDataFileTypeException, IOException, InvalidDataException {
         AbstractDataReader datafileReader = DataReaderFactory.getInstance()
                 .getReader(transactionDataFileType);
-        List<Transaction> transactionList = datafileReader.readFile(fileName);
-        out.println("************ START File read OUTPUT *********");
-        out.println(transactionList);
+        Map<TransactionEntry, List<Transaction>> transactionsMap = datafileReader.readFile(fileName);
+        out.println("************ START File read OUTPUT, No of Keys in map: *********" + transactionsMap.size());
+        out.println(transactionsMap);
         out.println("************ END File read OUTPUT *********");
-        TransactionFeeCalculator.getInstance().calculateFee(transactionList);
+        TransactionFeeCalculator.getInstance().calculateFee(transactionsMap, out);
         // For debugging
         out
                 .println("************ START **After Fee calculation List status *********");
-        out.println(transactionList);
+        out.println(transactionsMap);
         out
                 .println("************ END **After Fee calculation List status *********");
 
         // For debugging
         out.println("************ START **Before Report *********");
-        Map<SummaryDTO, Double> report = SummaryGenerator.getInstance().generateReport(transactionList);
+        Map<SummaryDTO, Double> report = SummaryGenerator.getInstance().generateReport(transactionsMap);
         SummaryWriter.getInstance().writeReport(report, out);
         out.println("************ END **After Report *********");
     }

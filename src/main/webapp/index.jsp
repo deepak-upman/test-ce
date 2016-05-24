@@ -6,6 +6,8 @@
     </head>
     <body>
         <h2>Magic! I am doing some computation. What? I need to think of!</h2>
+
+        <h2>There are more than one threads calculating the fee of transactions!</h2>
         <br />
         <%
                 // Assume the file to exist on the classpath.

@@ -4,9 +4,11 @@
 package com.dbank.fee.calculator;
 
 import com.dbank.fee.calculator.common.Transaction;
-import com.dbank.fee.calculator.common.TransactionType;
+import com.dbank.fee.calculator.common.TransactionEntry;
 
-import java.util.List;
+import java.io.PrintStream;
+import java.util.*;
+import java.util.concurrent.*;
 
 /**
  * Calculate the fee as per business logic, in the same input list.
@@ -24,60 +26,39 @@ public class TransactionFeeCalculator {
         return transactionFeeCalculator;
     }
 
-    public void calculateFee(List<Transaction> transactionList) {
-        for (int transactionIndex = 0; transactionIndex < transactionList.size(); transactionIndex++) {
-
-            Transaction transaction = transactionList.get(transactionIndex);
-            if (!transaction.isCalculated()) {
-                int intraDayTransactionIndex;
-                if (TransactionType.isValidForIntraDay(transaction.getTransactionType()) && (intraDayTransactionIndex = isIntraDayTransaction(
-                        transactionList, transactionIndex)) != -1) {
-                    // This is intraDay transaction, and the returned index is
-                    // that
-                    // paired transaction
-                    transaction.setCalculatedFee(10);
-                    transactionList.get(intraDayTransactionIndex).setCalculatedFee(
-                            10);
-                    transactionList.get(intraDayTransactionIndex)
-                            .setCalculated(true);
-                } else if (transaction.isPriorityFlag()) {
-                    // For non -intra day and high priority transaction , we
-                    // calculate $500
-                    transaction.setCalculatedFee(500);
+    public void calculateFee(Map<TransactionEntry, List<Transaction>> transactionsMap, PrintStream out) {
+        // Number of worker threads to be executing, to calculate the fee.
+        int nWorkerThreads = 8;
+        ExecutorService pool = Executors.newFixedThreadPool(nWorkerThreads);
+        Set<Future<String>> futures = new HashSet<>();
+        try {
+            CountDownLatch countDownLatch = new CountDownLatch(nWorkerThreads);
+            Queue<TransactionEntry> transactionEntryQueue = new ConcurrentLinkedQueue<>(transactionsMap.keySet());
+            for (int i = 0; i < nWorkerThreads; i++) {
+                Callable<String> task = new FeeCalculatorWorker(transactionEntryQueue, transactionsMap, countDownLatch);
+                Future<String> future = pool.submit(task);
+                futures.add(future);
+            }
+            countDownLatch.await();
+            // Just to ensure that we have result in future object. Result is returned after we decrement the countDownLatch
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            out.println("Exception occurred, while waiting for worker threads to finish! " + e.getMessage());
+        } finally {
+            pool.shutdown();
+        }
+        out.println("Printing Future results!");
+        for (Future<String> future : futures) {
+            try {
+                String result = future.get();
+                if (result != null) {
+                    out.println(result);
                 } else {
-                    // For non -intra day and low priority transaction , we
-                    // calculate $100
-                    transaction.setCalculatedFee(100);
+                    out.println("Future should not be NULL.");
                 }
-                transaction.setCalculated(true);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
-    }
-
-
-    private int isIntraDayTransaction(List<Transaction> transactionList,
-                                      int indexFor) {
-        int resultIndex = -1;
-        Transaction transaction = transactionList.get(indexFor);
-        for (int i = indexFor + 1; i < transactionList.size(); i++) {
-            Transaction currentTransaction = transactionList.get(i);
-            if (transaction.getClientId().equalsIgnoreCase(
-                    currentTransaction.getClientId())
-                    && transaction.getSecurityId().equalsIgnoreCase(
-                    currentTransaction.getSecurityId())
-                    && Transaction.dateFormat.format(
-                    transaction.getTransactionDate()).equalsIgnoreCase(
-                    Transaction.dateFormat.format(currentTransaction
-                            .getTransactionDate()))
-                    && (transaction.getTransactionType() == TransactionType.SELL
-                    && currentTransaction.getTransactionType() == TransactionType.BUY || transaction
-                    .getTransactionType() == TransactionType.BUY
-                    && currentTransaction.getTransactionType() == TransactionType.SELL)) {
-                resultIndex = i;
-                break;
-            }
-        }
-
-        return resultIndex;
     }
 }

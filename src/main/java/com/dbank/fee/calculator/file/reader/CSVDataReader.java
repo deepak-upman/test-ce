@@ -4,6 +4,7 @@
 package com.dbank.fee.calculator.file.reader;
 
 import com.dbank.fee.calculator.common.Transaction;
+import com.dbank.fee.calculator.common.TransactionEntry;
 import com.dbank.fee.calculator.common.exception.InvalidDataException;
 
 import java.io.BufferedReader;
@@ -11,8 +12,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.BlockingDeque;
+import java.util.Map;
 
 /**
  * CSV file reader, to read the CSV transaction file.
@@ -22,10 +24,10 @@ import java.util.concurrent.BlockingDeque;
 public class CSVDataReader extends AbstractDataReader {
 
     @Override
-    public List<Transaction> readFile(String fileName)
+    public Map<TransactionEntry, List<Transaction>> readFile(String fileName)
             throws IOException, InvalidDataException {
-        List<Transaction> transactionList = new ArrayList<>();
 
+        Map<TransactionEntry, List<Transaction>> transactionsMap = new HashMap<>();
         try (InputStream tranFileAsStream = this.getClass().getClassLoader().getResourceAsStream(fileName);
              BufferedReader br = new BufferedReader(new InputStreamReader(tranFileAsStream))) {
             String input;
@@ -46,12 +48,16 @@ public class CSVDataReader extends AbstractDataReader {
                                     transactionRow[4]).marketValue(
                                     transactionRow[5]).priorityFlag(
                                     transactionRow[6]).build();
-                    transactionList.add(transaction);
+                    TransactionEntry tranEntry = new TransactionEntry(transaction.getClientId(), transaction.getSecurityId(), transaction.getTransactionDate());
+                    if (!transactionsMap.containsKey(tranEntry)) {
+                        transactionsMap.put(tranEntry, new ArrayList<Transaction>());
+                    }
+                    transactionsMap.get(tranEntry).add(transaction);
                 } else {
                     System.out.println("Skipping the headers!!!");
                 }
             }
         }
-        return transactionList;
+        return transactionsMap;
     }
 }
